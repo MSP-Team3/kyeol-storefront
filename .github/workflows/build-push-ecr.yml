@@ -32,7 +32,7 @@ jobs:
 
     env:
       # Saleor API - 빌드 시 GraphQL 스키마 fetch에 필요
-      SALEOR_API_URL: https://dev-api.kyeol.click/graphql/
+      SALEOR_API_URL: https://readonly.saleor.io/graphql/
 
     steps:
       - name: Checkout
