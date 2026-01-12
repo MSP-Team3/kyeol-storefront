@@ -26,13 +26,19 @@ jobs:
             storefront_url: https://origin-dev.kyeol.click
 
     env:
-      # Saleor API - 빌드 시 GraphQL 스키마 fetch에 필요
-      SALEOR_API_URL: https://readonly.saleor.io/graphql/
+      # Saleor API - 가장 안정적인 데모 서버 주소로 변경
+      SALEOR_API_URL: https://demo.saleor.io/graphql/
       HUSKY: 0
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Diagnostic - Print Env
+        run: |
+          echo "Building for: ${{ matrix.env }}"
+          echo "API URL: ${{ env.SALEOR_API_URL }}"
+
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
