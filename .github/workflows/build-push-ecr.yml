@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  AWS_REGION: ap-southeast-2
+  AWS_REGION: ap-northeast-2
 
 permissions:
   id-token: write
@@ -21,8 +21,8 @@ jobs:
         env: [dev, stage, prod]
         include:
           - env: dev
-            ecr_repo: min-kyeol-storefront
-            storefront_url: https://origin-dev-kyeol.msp-g1.click
+            ecr_repo: kyeol-dev-storefront
+            storefront_url: https://origin-dev.kyeol.click
           - env: stage
             ecr_repo: min-kyeol-stage-storefront
             storefront_url: https://origin-stage-kyeol.msp-g1.click
@@ -31,8 +31,8 @@ jobs:
             storefront_url: https://origin-prod-kyeol.msp-g1.click
 
     env:
-      # Saleor Cloud API - 빌드 시 GraphQL 스키마 fetch에 필요
-      SALEOR_API_URL: https://storefront1.saleor.cloud/graphql/
+      # Saleor API - 빌드 시 GraphQL 스키마 fetch에 필요
+      SALEOR_API_URL: https://dev-api.kyeol.click/graphql/
 
     steps:
       - name: Checkout
@@ -41,7 +41,7 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEV }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
