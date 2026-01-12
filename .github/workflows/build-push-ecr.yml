@@ -58,8 +58,11 @@ jobs:
           push: true
           build-args: |
             NEXT_PUBLIC_SALEOR_API_URL=${{ env.SALEOR_API_URL }}
+            NEXT_PUBLIC_API_URI=${{ env.SALEOR_API_URL }}
             NEXT_PUBLIC_STOREFRONT_URL=${{ matrix.storefront_url }}
             NEXT_PUBLIC_DEFAULT_CHANNEL=default-channel
+            NEXT_PUBLIC_SKIP_DB_CHECK=true
+            SKIP_DB_CHECK=true
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/${{ matrix.ecr_repo }}:${{ matrix.env }}-latest
             ${{ steps.login-ecr.outputs.registry }}/${{ matrix.ecr_repo }}:${{ matrix.env }}-${{ github.sha }}
