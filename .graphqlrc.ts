@@ -3,17 +3,17 @@ import type { CodegenConfig } from "@graphql-codegen/cli";
 
 loadEnvConfig(process.cwd());
 
-let schemaUrl = process.env.NEXT_PUBLIC_SALEOR_API_URL;
+let schemaUrl = "schema.graphql";
 
-if (process.env.GITHUB_ACTION === "generate-schema-from-file") {
-	schemaUrl = "schema.graphql";
+if (!schemaUrl) {
+	// fallback to env if file is missing (though we just copied it)
+	schemaUrl = process.env.NEXT_PUBLIC_SALEOR_API_URL as string;
 }
 
 if (!schemaUrl) {
 	console.error(
-		"Before GraphQL types can be generated, you need to set NEXT_PUBLIC_SALEOR_API_URL environment variable.",
+		"Before GraphQL types can be generated, you need to set NEXT_PUBLIC_SALEOR_API_URL environment variable or provide schema.graphql file.",
 	);
-	console.error("Follow development instructions in the README.md file.");
 	process.exit(1);
 }
 

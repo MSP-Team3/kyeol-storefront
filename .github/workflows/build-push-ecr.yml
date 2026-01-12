@@ -26,8 +26,8 @@ jobs:
             storefront_url: https://origin-dev.kyeol.click
 
     env:
-      # Saleor API - 가장 안정적인 데모 서버 주소로 변경
-      SALEOR_API_URL: https://demo.saleor.io/graphql/
+      # Saleor API - 런타임에 사용할 실제 주소 (이미 local schema.graphql을 사용하도록 설정함)
+      SALEOR_API_URL: https://dev-api.kyeol.click/graphql/
       HUSKY: 0
 
     steps:
