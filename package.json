@@ -9,7 +9,7 @@
 		"build": "next build",
 		"start": "next start",
 		"predev": "pnpm run generate",
-		"prebuild": "pnpm run generate",
+		"prebuild": "",
 		"lint": "eslint",
 		"generate": "graphql-codegen --config .graphqlrc.ts",
 		"prepare": "husky install"
