@@ -17,22 +17,18 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        env: [dev, stage, prod]
+        env: [dev]
         include:
           - env: dev
             ecr_repo: kyeol-dev-storefront
             storefront_url: https://origin-dev.kyeol.click
-          - env: stage
-            ecr_repo: min-kyeol-stage-storefront
-            storefront_url: https://origin-stage-kyeol.msp-g1.click
-          - env: prod
-            ecr_repo: min-kyeol-prod-storefront
-            storefront_url: https://origin-prod-kyeol.msp-g1.click
 
     env:
       # Saleor API - 빌드 시 GraphQL 스키마 fetch에 필요
       SALEOR_API_URL: https://readonly.saleor.io/graphql/
+      HUSKY: 0
 
     steps:
       - name: Checkout
