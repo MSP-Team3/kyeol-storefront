@@ -18,10 +18,14 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# 빌드 시점에 API가 없어도 통과할 수 있도록 하는 핵심 설정
 ENV NEXT_OUTPUT=standalone
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV SKIP_DB_CHECK=true
+ENV NEXT_PUBLIC_SKIP_DB_CHECK=true
 
-# Build-time args -> env (graphql-codegen이 API URL에서 스키마를 fetch)
-ARG NEXT_PUBLIC_SALEOR_API_URL=https://storefront1.saleor.cloud/graphql/
+# Build-time args
+ARG NEXT_PUBLIC_SALEOR_API_URL
 ENV NEXT_PUBLIC_SALEOR_API_URL=${NEXT_PUBLIC_SALEOR_API_URL}
 
 ARG NEXT_PUBLIC_STOREFRONT_URL
@@ -34,8 +38,11 @@ ENV PNPM_HOME=/pnpm
 ENV PATH=/pnpm:$PATH
 RUN corepack enable
 
-# prebuild: pnpm generate -> API에서 GraphQL 스키마 introspection
-# build: next build
+# 1. 먼저 로컬에 있는 schema.graphql을 사용하여 타입을 생성합니다.
+# (내트워크 연결 없이 빌드 성공의 핵심)
+RUN pnpm run generate
+
+# 2. Next.js 빌드를 실행합니다.
 RUN pnpm build
 
 # Production image
@@ -43,6 +50,7 @@ FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -53,6 +61,7 @@ RUN mkdir .next && chown nextjs:nodejs .next
 # Copy standalone output
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 USER nextjs
 EXPOSE 3000
