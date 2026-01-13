@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  AWS_REGION: ap-southeast-2
+  AWS_REGION: ap-northeast-2
 
 permissions:
   id-token: write
@@ -21,14 +21,14 @@ jobs:
         env: [dev, stage, prod]
         include:
           - env: dev
-            ecr_repo: min-kyeol-storefront
-            storefront_url: https://origin-dev-kyeol.msp-g1.click
+            ecr_repo: kyeol-dev-storefront
+            storefront_url: https://origin-dev.kyeol.click
           - env: stage
-            ecr_repo: min-kyeol-stage-storefront
-            storefront_url: https://origin-stage-kyeol.msp-g1.click
+            ecr_repo: kyeol-stage-storefront
+            storefront_url: https://origin-stage.kyeol.click
           - env: prod
-            ecr_repo: min-kyeol-prod-storefront
-            storefront_url: https://origin-prod-kyeol.msp-g1.click
+            ecr_repo: kyeol-prod-storefront
+            storefront_url: https://origin-prod.kyeol.click
 
     env:
       # Saleor Cloud API - 빌드 시 GraphQL 스키마 fetch에 필요
