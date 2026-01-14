@@ -23,16 +23,16 @@ jobs:
           - env: dev
             ecr_repo: kyeol-dev-storefront
             storefront_url: https://origin-dev.kyeol.click
-            api_url: https://api.kyeol.click/graphql/
           - env: stage
             ecr_repo: kyeol-stage-storefront
             storefront_url: https://origin-stage.kyeol.click
-            api_url: https://api.kyeol.click/graphql/
           - env: prod
             ecr_repo: kyeol-prod-storefront
             storefront_url: https://origin-prod.kyeol.click
-            api_url: https://api.kyeol.click/graphql/
 
+    env:
+      # Saleor API - 빌드 시 GraphQL 스키마 fetch에 필요
+      SALEOR_API_URL: https://api.kyeol.click/graphql/
 
     steps:
       - name: Checkout
@@ -57,7 +57,7 @@ jobs:
           context: .
           push: true
           build-args: |
-            NEXT_PUBLIC_SALEOR_API_URL=${{ matrix.api_url }}
+            NEXT_PUBLIC_SALEOR_API_URL=${{ env.SALEOR_API_URL }}
             NEXT_PUBLIC_STOREFRONT_URL=${{ matrix.storefront_url }}
             NEXT_PUBLIC_DEFAULT_CHANNEL=default-channel
           tags: |
