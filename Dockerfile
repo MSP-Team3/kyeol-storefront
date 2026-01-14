@@ -22,17 +22,26 @@ ENV NEXT_OUTPUT=standalone
 
 # Build-time args -> env (graphql-codegen이 API URL에서 스키마를 fetch)
 ARG NEXT_PUBLIC_SALEOR_API_URL
-ENV NEXT_PUBLIC_SALEOR_API_URL=${NEXT_PUBLIC_SALEOR_API_URL}
-
 ARG NEXT_PUBLIC_STOREFRONT_URL
-ENV NEXT_PUBLIC_STOREFRONT_URL=${NEXT_PUBLIC_STOREFRONT_URL}
-
 ARG NEXT_PUBLIC_DEFAULT_CHANNEL=default-channel
+
+# Validate required build args
+RUN if [ -z "$NEXT_PUBLIC_SALEOR_API_URL" ]; then \
+      echo "ERROR: NEXT_PUBLIC_SALEOR_API_URL is not set"; \
+      exit 1; \
+    fi
+
+# Set environment variables for build
+ENV NEXT_PUBLIC_SALEOR_API_URL=${NEXT_PUBLIC_SALEOR_API_URL}
+ENV NEXT_PUBLIC_STOREFRONT_URL=${NEXT_PUBLIC_STOREFRONT_URL}
 ENV NEXT_PUBLIC_DEFAULT_CHANNEL=${NEXT_PUBLIC_DEFAULT_CHANNEL}
 
 ENV PNPM_HOME=/pnpm
 ENV PATH=/pnpm:$PATH
 RUN corepack enable
+
+# Debug: print environment variables
+RUN echo "Building with API_URL: $NEXT_PUBLIC_SALEOR_API_URL"
 
 # prebuild: pnpm generate -> API에서 GraphQL 스키마 introspection
 # build: next build
