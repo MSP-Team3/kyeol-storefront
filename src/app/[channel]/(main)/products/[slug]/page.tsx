@@ -60,15 +60,14 @@ export async function generateMetadata(
 	};
 }
 
-export async function generateStaticParams({ params }: { params: { channel: string } }) {
-	const { products } = await executeGraphQL(ProductListDocument, {
-		revalidate: 60,
-		variables: { first: 20, channel: params.channel },
-		withAuth: false,
-	});
+// Disable static generation during build to avoid API timeouts
+// Products will be generated dynamically at runtime
+export const dynamicParams = true;
 
-	const paths = products?.edges.map(({ node: { slug } }) => ({ slug })) || [];
-	return paths;
+export async function generateStaticParams({ params }: { params: { channel: string } }) {
+	// Return empty array to skip static generation during build
+	// All pages will be generated on-demand
+	return [];
 }
 
 const parser = edjsHTML();
