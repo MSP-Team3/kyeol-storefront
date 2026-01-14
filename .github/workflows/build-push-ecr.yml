@@ -28,7 +28,7 @@ jobs:
             storefront_url: https://origin-stage.kyeol.click
           - env: prod
             ecr_repo: kyeol-prod-storefront
-            storefront_url: https://kyeol.click
+            storefront_url: https://origin-prod.kyeol.click
 
     env:
       # Saleor API - 빌드 시 GraphQL 스키마 fetch에 필요
