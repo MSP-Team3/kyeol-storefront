@@ -21,7 +21,7 @@ COPY . .
 ENV NEXT_OUTPUT=standalone
 
 # Build-time args -> env (graphql-codegen이 API URL에서 스키마를 fetch)
-ARG NEXT_PUBLIC_SALEOR_API_URL=https://storefront1.saleor.cloud/graphql/
+ARG NEXT_PUBLIC_SALEOR_API_URL
 ENV NEXT_PUBLIC_SALEOR_API_URL=${NEXT_PUBLIC_SALEOR_API_URL}
 
 ARG NEXT_PUBLIC_STOREFRONT_URL
