@@ -64,7 +64,7 @@ export async function generateMetadata(
 // Products will be generated dynamically at runtime
 export const dynamicParams = true;
 
-export async function generateStaticParams({ params }: { params: { channel: string } }) {
+export async function generateStaticParams(_params: { params: { channel: string } }) {
 	// Return empty array to skip static generation during build
 	// All pages will be generated on-demand
 	return [];
