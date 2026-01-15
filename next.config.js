@@ -7,12 +7,9 @@ const config = {
 			},
 		],
 	},
-},
 	experimental: {
 		serverActions: true,
-		typedRoutes: true,
 	},
-	// used in the Dockerfile
 	output:
 		process.env.NEXT_OUTPUT === "standalone"
 			? "standalone"
