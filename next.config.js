@@ -10,6 +10,8 @@ const config = {
 	experimental: {
 		serverActions: true,
 	},
+	swcMinify: false,
+	trailingSlash: false,
 	output:
 		process.env.NEXT_OUTPUT === "standalone"
 			? "standalone"
