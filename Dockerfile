@@ -1,8 +1,10 @@
-FROM node:18-alpine AS base
+FROM node:20-slim AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
+# Debian-based images use apt-get. glibc is native, so libc6-compat is not needed.
+# Install openssl and ca-certificates for general compatibility.
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 ENV PNPM_HOME=/pnpm
@@ -27,9 +29,9 @@ ARG NEXT_PUBLIC_DEFAULT_CHANNEL=default-channel
 
 # Validate required build args
 RUN if [ -z "$NEXT_PUBLIC_SALEOR_API_URL" ]; then \
-      echo "ERROR: NEXT_PUBLIC_SALEOR_API_URL is not set"; \
-      exit 1; \
-    fi
+  echo "ERROR: NEXT_PUBLIC_SALEOR_API_URL is not set"; \
+  exit 1; \
+  fi
 
 # Set environment variables for build
 ENV NEXT_PUBLIC_SALEOR_API_URL=${NEXT_PUBLIC_SALEOR_API_URL}
