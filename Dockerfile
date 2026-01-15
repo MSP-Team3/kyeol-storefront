@@ -1,4 +1,6 @@
 FROM node:22-slim AS base
+ENV FORCE_REBUILD=20260115_NEXTJS_13_5_FIX
+
 
 # Install dependencies only when needed
 FROM base AS deps
