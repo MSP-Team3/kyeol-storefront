@@ -1,17 +1,15 @@
 import edjsHTML from "editorjs-html";
-import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
 import { type ResolvingMetadata, type Metadata } from "next";
 import xss from "xss";
-import { invariant } from "ts-invariant";
 import { type WithContext, type Product } from "schema-dts";
 import { AddButton } from "./AddButton";
 import { VariantSelector } from "@/ui/components/VariantSelector";
 import { ProductImageWrapper } from "@/ui/atoms/ProductImageWrapper";
 import { executeGraphQL } from "@/lib/graphql";
 import { formatMoney, formatMoneyRange } from "@/lib/utils";
-import { CheckoutAddLineDocument, ProductDetailsDocument } from "@/gql/graphql";
-import * as Checkout from "@/lib/checkout";
+import { addToCartAction } from "./actions";
+import { ProductDetailsDocument } from "@/gql/graphql";
 import { AvailabilityMessage } from "@/ui/components/AvailabilityMessage";
 
 export async function generateMetadata(
@@ -49,13 +47,13 @@ export async function generateMetadata(
 		},
 		openGraph: product.thumbnail
 			? {
-					images: [
-						{
-							url: product.thumbnail.url,
-							alt: product.name,
-						},
-					],
-				}
+				images: [
+					{
+						url: product.thumbnail.url,
+						alt: product.name,
+					},
+				],
+			}
 			: null,
 	};
 }
@@ -96,42 +94,15 @@ export default async function Page(props: {
 	const selectedVariantID = searchParams.variant;
 	const selectedVariant = variants?.find(({ id }) => id === selectedVariantID);
 
-	async function addItem() {
-		"use server";
-
-		const checkout = await Checkout.findOrCreate({
-			checkoutId: await Checkout.getIdFromCookies(params.channel),
-			channel: params.channel,
-		});
-		invariant(checkout, "This should never happen");
-
-		await Checkout.saveIdToCookie(params.channel, checkout.id);
-
-		if (!selectedVariantID) {
-			return;
-		}
-
-		// TODO: error handling
-		await executeGraphQL(CheckoutAddLineDocument, {
-			variables: {
-				id: checkout.id,
-				productVariantId: decodeURIComponent(selectedVariantID),
-			},
-			cache: "no-cache",
-		});
-
-		revalidatePath("/cart");
-	}
-
 	const isAvailable = variants?.some((variant) => variant.quantityAvailable) ?? false;
 
 	const price = selectedVariant?.pricing?.price?.gross
 		? formatMoney(selectedVariant.pricing.price.gross.amount, selectedVariant.pricing.price.gross.currency)
 		: isAvailable
 			? formatMoneyRange({
-					start: product?.pricing?.priceRange?.start?.gross,
-					stop: product?.pricing?.priceRange?.stop?.gross,
-				})
+				start: product?.pricing?.priceRange?.start?.gross,
+				stop: product?.pricing?.priceRange?.stop?.gross,
+			})
 			: "";
 
 	const productJsonLd: WithContext<Product> = {
@@ -140,31 +111,31 @@ export default async function Page(props: {
 		image: product.thumbnail?.url,
 		...(selectedVariant
 			? {
-					name: `${product.name} - ${selectedVariant.name}`,
-					description: product.seoDescription || `${product.name} - ${selectedVariant.name}`,
-					offers: {
-						"@type": "Offer",
-						availability: selectedVariant.quantityAvailable
-							? "https://schema.org/InStock"
-							: "https://schema.org/OutOfStock",
-						priceCurrency: selectedVariant.pricing?.price?.gross.currency,
-						price: selectedVariant.pricing?.price?.gross.amount,
-					},
-				}
+				name: `${product.name} - ${selectedVariant.name}`,
+				description: product.seoDescription || `${product.name} - ${selectedVariant.name}`,
+				offers: {
+					"@type": "Offer",
+					availability: selectedVariant.quantityAvailable
+						? "https://schema.org/InStock"
+						: "https://schema.org/OutOfStock",
+					priceCurrency: selectedVariant.pricing?.price?.gross.currency,
+					price: selectedVariant.pricing?.price?.gross.amount,
+				},
+			}
 			: {
-					name: product.name,
+				name: product.name,
 
-					description: product.seoDescription || product.name,
-					offers: {
-						"@type": "AggregateOffer",
-						availability: product.variants?.some((variant) => variant.quantityAvailable)
-							? "https://schema.org/InStock"
-							: "https://schema.org/OutOfStock",
-						priceCurrency: product.pricing?.priceRange?.start?.gross.currency,
-						lowPrice: product.pricing?.priceRange?.start?.gross.amount,
-						highPrice: product.pricing?.priceRange?.stop?.gross.amount,
-					},
-				}),
+				description: product.seoDescription || product.name,
+				offers: {
+					"@type": "AggregateOffer",
+					availability: product.variants?.some((variant) => variant.quantityAvailable)
+						? "https://schema.org/InStock"
+						: "https://schema.org/OutOfStock",
+					priceCurrency: product.pricing?.priceRange?.start?.gross.currency,
+					lowPrice: product.pricing?.priceRange?.start?.gross.amount,
+					highPrice: product.pricing?.priceRange?.stop?.gross.amount,
+				},
+			}),
 	};
 
 	return (
@@ -175,7 +146,9 @@ export default async function Page(props: {
 					__html: JSON.stringify(productJsonLd),
 				}}
 			/>
-			<form className="grid gap-2 sm:grid-cols-2 lg:grid-cols-8" action={addItem}>
+			<form className="grid gap-2 sm:grid-cols-2 lg:grid-cols-8" action={addToCartAction}>
+				<input type="hidden" name="channel" value={params.channel} />
+				<input type="hidden" name="variantId" value={selectedVariantID || ""} />
 				<div className="md:col-span-1 lg:col-span-5">
 					{firstImage && (
 						<ProductImageWrapper
