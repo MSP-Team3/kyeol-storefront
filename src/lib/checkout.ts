@@ -1,37 +1,50 @@
+import "server-only";
+
 import { cookies } from "next/headers";
 import { CheckoutCreateDocument, CheckoutFindDocument } from "@/gql/graphql";
 import { executeGraphQL } from "@/lib/graphql";
 
 export async function getIdFromCookies(channel: string) {
-	const cookieName = `checkoutId-${channel}`;
-	const checkoutId = (await cookies()).get(cookieName)?.value || "";
-	return checkoutId;
+	try {
+		const cookieName = `checkoutId-${channel}`;
+		const checkoutId = cookies().get(cookieName)?.value || "";
+		return checkoutId;
+	} catch (e) {
+		console.error("getIdFromCookies failed:", e);
+		return "";
+	}
 }
 
 export async function saveIdToCookie(channel: string, checkoutId: string) {
-	const shouldUseHttps =
-		process.env.NEXT_PUBLIC_STOREFRONT_URL?.startsWith("https") || !!process.env.NEXT_PUBLIC_VERCEL_URL;
-	const cookieName = `checkoutId-${channel}`;
-	(await cookies()).set(cookieName, checkoutId, {
-		sameSite: "lax",
-		secure: shouldUseHttps,
-	});
+	try {
+		const shouldUseHttps =
+			process.env.NEXT_PUBLIC_STOREFRONT_URL?.startsWith("https") || !!process.env.NEXT_PUBLIC_VERCEL_URL;
+
+		const cookieName = `checkoutId-${channel}`;
+		cookies().set(cookieName, checkoutId, {
+			sameSite: "lax",
+			secure: shouldUseHttps,
+			httpOnly: true,
+			path: "/",
+		});
+	} catch (e) {
+		console.error("saveIdToCookie failed:", e);
+		// 쿠키 설정 실패해도 치명 장애로 올리지 않음
+	}
 }
 
 export async function find(checkoutId: string) {
 	try {
 		const { checkout } = checkoutId
 			? await executeGraphQL(CheckoutFindDocument, {
-					variables: {
-						id: checkoutId,
-					},
-					cache: "no-cache",
-				})
+				variables: { id: checkoutId },
+				cache: "no-cache",
+			})
 			: { checkout: null };
 
 		return checkout;
 	} catch {
-		// we ignore invalid ID or checkout not found
+		// invalid ID or checkout not found
 	}
 }
 

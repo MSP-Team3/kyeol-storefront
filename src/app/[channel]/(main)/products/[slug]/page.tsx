@@ -12,6 +12,27 @@ import { addToCartAction } from "./actions";
 import { ProductDetailsDocument } from "@/gql/graphql";
 import { AvailabilityMessage } from "@/ui/components/AvailabilityMessage";
 
+export const dynamic = "force-dynamic";
+
+// ✅ 공통 안전 헬퍼: 장애 시 500 대신 null 반환
+async function safeGetProduct(params: { slug: string; channel: string }) {
+	try {
+		const { product } = await executeGraphQL(ProductDetailsDocument, {
+			variables: {
+				slug: decodeURIComponent(params.slug),
+				channel: params.channel,
+			},
+			revalidate: 0, // 장애 구간 캐시 혼선 제거
+			withAuth: false,
+		});
+
+		return product ?? null;
+	} catch (e) {
+		console.error("ProductDetails fetch failed:", e);
+		return null;
+	}
+}
+
 export async function generateMetadata(
 	props: {
 		params: Promise<{ slug: string; channel: string }>;
@@ -21,18 +42,8 @@ export async function generateMetadata(
 ): Promise<Metadata> {
 	const [searchParams, params] = await Promise.all([props.searchParams, props.params]);
 
-	const { product } = await executeGraphQL(ProductDetailsDocument, {
-		variables: {
-			slug: decodeURIComponent(params.slug),
-			channel: params.channel,
-		},
-		revalidate: 60,
-		withAuth: false, // Prevent cookies() call during static generation
-	});
-
-	if (!product) {
-		notFound();
-	}
+	const product = await safeGetProduct(params);
+	if (!product) notFound();
 
 	const productName = product.seoTitle || product.name;
 	const variantName = product.variants?.find(({ id }) => id === searchParams.variant)?.name;
@@ -48,24 +59,21 @@ export async function generateMetadata(
 		},
 		openGraph: product.thumbnail
 			? {
-					images: [
-						{
-							url: product.thumbnail.url,
-							alt: product.name,
-						},
-					],
-				}
+				images: [
+					{
+						url: product.thumbnail.url,
+						alt: product.name,
+					},
+				],
+			}
 			: null,
 	};
 }
 
 // Disable static generation during build to avoid API timeouts
-// Products will be generated dynamically at runtime
 export const dynamicParams = true;
 
 export async function generateStaticParams(_params: { params: { channel: string } }) {
-	// Return empty array to skip static generation during build
-	// All pages will be generated on-demand
 	return [];
 }
 
@@ -76,21 +84,22 @@ export default async function Page(props: {
 	searchParams: Promise<{ variant?: string }>;
 }) {
 	const [searchParams, params] = await Promise.all([props.searchParams, props.params]);
-	const { product } = await executeGraphQL(ProductDetailsDocument, {
-		variables: {
-			slug: decodeURIComponent(params.slug),
-			channel: params.channel,
-		},
-		revalidate: 60,
-		withAuth: false, // Prevent cookies() call during page render
-	});
 
-	if (!product) {
-		notFound();
-	}
+	const product = await safeGetProduct(params);
+	if (!product) notFound();
 
 	const firstImage = product.thumbnail;
-	const description = product?.description ? parser.parse(JSON.parse(product?.description)) : null;
+
+	// ✅ description 파싱 안전화 (덤프 데이터 섞이면 여기서 랜덤 500 나기 쉬움)
+	let description: string[] | null = null;
+	try {
+		if (product?.description) {
+			description = parser.parse(JSON.parse(product.description));
+		}
+	} catch (e) {
+		console.error("Invalid product.description JSON:", e);
+		description = null;
+	}
 
 	const variants = product.variants;
 	const selectedVariantID = searchParams.variant;
@@ -102,9 +111,9 @@ export default async function Page(props: {
 		? formatMoney(selectedVariant.pricing.price.gross.amount, selectedVariant.pricing.price.gross.currency)
 		: isAvailable
 			? formatMoneyRange({
-					start: product?.pricing?.priceRange?.start?.gross,
-					stop: product?.pricing?.priceRange?.stop?.gross,
-				})
+				start: product?.pricing?.priceRange?.start?.gross,
+				stop: product?.pricing?.priceRange?.stop?.gross,
+			})
 			: "";
 
 	const productJsonLd: WithContext<Product> = {
@@ -113,31 +122,30 @@ export default async function Page(props: {
 		image: product.thumbnail?.url,
 		...(selectedVariant
 			? {
-					name: `${product.name} - ${selectedVariant.name}`,
-					description: product.seoDescription || `${product.name} - ${selectedVariant.name}`,
-					offers: {
-						"@type": "Offer",
-						availability: selectedVariant.quantityAvailable
-							? "https://schema.org/InStock"
-							: "https://schema.org/OutOfStock",
-						priceCurrency: selectedVariant.pricing?.price?.gross.currency,
-						price: selectedVariant.pricing?.price?.gross.amount,
-					},
-				}
+				name: `${product.name} - ${selectedVariant.name}`,
+				description: product.seoDescription || `${product.name} - ${selectedVariant.name}`,
+				offers: {
+					"@type": "Offer",
+					availability: selectedVariant.quantityAvailable
+						? "https://schema.org/InStock"
+						: "https://schema.org/OutOfStock",
+					priceCurrency: selectedVariant.pricing?.price?.gross.currency,
+					price: selectedVariant.pricing?.price?.gross.amount,
+				},
+			}
 			: {
-					name: product.name,
-
-					description: product.seoDescription || product.name,
-					offers: {
-						"@type": "AggregateOffer",
-						availability: product.variants?.some((variant) => variant.quantityAvailable)
-							? "https://schema.org/InStock"
-							: "https://schema.org/OutOfStock",
-						priceCurrency: product.pricing?.priceRange?.start?.gross.currency,
-						lowPrice: product.pricing?.priceRange?.start?.gross.amount,
-						highPrice: product.pricing?.priceRange?.stop?.gross.amount,
-					},
-				}),
+				name: product.name,
+				description: product.seoDescription || product.name,
+				offers: {
+					"@type": "AggregateOffer",
+					availability: product.variants?.some((variant) => variant.quantityAvailable)
+						? "https://schema.org/InStock"
+						: "https://schema.org/OutOfStock",
+					priceCurrency: product.pricing?.priceRange?.start?.gross.currency,
+					lowPrice: product.pricing?.priceRange?.start?.gross.amount,
+					highPrice: product.pricing?.priceRange?.stop?.gross.amount,
+				},
+			}),
 	};
 
 	return (
@@ -164,9 +172,7 @@ export default async function Page(props: {
 				</div>
 				<div className="flex flex-col pt-6 sm:col-span-1 sm:px-6 sm:pt-0 lg:col-span-3 lg:pt-16">
 					<div>
-						<h1 className="mb-4 flex-auto text-3xl font-medium tracking-tight text-neutral-900">
-							{product?.name}
-						</h1>
+						<h1 className="mb-4 flex-auto text-3xl font-medium tracking-tight text-neutral-900">{product?.name}</h1>
 						<p className="mb-8 text-sm " data-testid="ProductElement_Price">
 							{price}
 						</p>
