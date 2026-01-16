@@ -1,6 +1,5 @@
 import { invariant } from "ts-invariant";
 import { type TypedDocumentString } from "../gql/graphql";
-import { getServerAuthClient } from "@/app/config";
 
 type GraphQLErrorResponse = {
 	errors: readonly {
@@ -36,9 +35,14 @@ export async function executeGraphQL<Result, Variables>(
 		next: { revalidate },
 	};
 
-	const response = withAuth
-		? await (await getServerAuthClient()).fetchWithAuth(process.env.NEXT_PUBLIC_SALEOR_API_URL, input)
-		: await fetch(process.env.NEXT_PUBLIC_SALEOR_API_URL, input);
+	let response: Response;
+	if (withAuth) {
+		// Dynamic import to prevent cookies() call during static generation
+		const { getServerAuthClient } = await import("@/app/config");
+		response = await (await getServerAuthClient()).fetchWithAuth(process.env.NEXT_PUBLIC_SALEOR_API_URL, input);
+	} else {
+		response = await fetch(process.env.NEXT_PUBLIC_SALEOR_API_URL, input);
+	}
 
 	if (!response.ok) {
 		const body = await (async () => {
