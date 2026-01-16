@@ -24,8 +24,9 @@ jobs:
           if [[ "${{ steps.release.outputs.has_schema }}" == "true" ]]; then
             echo "schema.graphql is attached to the ${{ steps.release.outputs.tag }} release, updating..."
           else
-            echo "schema.graphql is not attached to the ${{ steps.release.outputs.tag }} release, exiting..."
-            exit 1
+            echo "schema.graphql is not attached to the ${{ steps.release.outputs.tag }} release. Skipping update."
+            echo "has_schema=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
       - name: Checkout repository
