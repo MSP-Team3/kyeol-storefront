@@ -39,6 +39,7 @@ export async function find(checkoutId: string) {
 			? await executeGraphQL(CheckoutFindDocument, {
 				variables: { id: checkoutId },
 				cache: "no-cache",
+				withAuth: false,
 			})
 			: { checkout: null };
 
@@ -57,4 +58,5 @@ export async function findOrCreate({ channel, checkoutId }: { checkoutId?: strin
 }
 
 export const create = ({ channel }: { channel: string }) =>
-	executeGraphQL(CheckoutCreateDocument, { cache: "no-cache", variables: { channel } });
+	executeGraphQL(CheckoutCreateDocument, { cache: "no-cache", variables: { channel }, withAuth: false });
+

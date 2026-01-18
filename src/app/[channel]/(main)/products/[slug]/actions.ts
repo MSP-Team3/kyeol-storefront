@@ -29,6 +29,7 @@ export async function addToCartAction(formData: FormData): Promise<void> {
                 productVariantId: decodeURIComponent(variantId),
             },
             cache: "no-cache",
+            withAuth: false,
         });
 
         revalidatePath("/cart");
