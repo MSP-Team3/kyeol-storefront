@@ -7,6 +7,7 @@ import { LinkWithChannel } from "@/ui/atoms/LinkWithChannel";
 export async function UserMenuContainer() {
 	const { me: user } = await executeGraphQL(CurrentUserDocument, {
 		cache: "no-cache",
+		withAuth: true,
 	});
 
 	if (user) {
