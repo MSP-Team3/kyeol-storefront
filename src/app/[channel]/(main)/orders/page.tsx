@@ -6,6 +6,7 @@ import { OrderListItem } from "@/ui/components/OrderListItem";
 export default async function OrderPage() {
 	const { me: user } = await executeGraphQL(CurrentUserOrderListDocument, {
 		cache: "no-cache",
+		withAuth: true,
 	});
 
 	if (!user) {
