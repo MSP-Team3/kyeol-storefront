@@ -1,12 +1,12 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import clsx from "clsx";
 import { Menu, Transition } from "@headlessui/react";
+import { useRouter } from "next/navigation";
 import { UserInfo } from "./components/UserInfo";
 import { UserAvatar } from "./components/UserAvatar";
 import { type UserDetailsFragment } from "@/gql/graphql";
-import { logout } from "@/app/actions";
 import { LinkWithChannel } from "@/ui/atoms/LinkWithChannel";
 
 type Props = {
@@ -14,6 +14,30 @@ type Props = {
 };
 
 export function UserMenu({ user }: Props) {
+	const [loggingOut, setLoggingOut] = useState(false);
+	const router = useRouter();
+
+	const handleLogout = async () => {
+		if (loggingOut) return;
+
+		setLoggingOut(true);
+		try {
+			const response = await fetch("/api/auth/logout", {
+				method: "POST",
+			});
+
+			if (!response.ok) {
+				throw new Error("Logout failed");
+			}
+
+			router.refresh();
+			router.push("/");
+		} catch (error) {
+			console.error("Logout error:", error);
+			setLoggingOut(false);
+		}
+	};
+
 	return (
 		<Menu as="div" className="relative">
 			<Menu.Button className="relative flex rounded-full bg-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-neutral-800">
@@ -49,17 +73,17 @@ export function UserMenu({ user }: Props) {
 					<div className="flex flex-col px-1 py-1">
 						<Menu.Item>
 							{({ active }) => (
-								<form action={logout}>
-									<button
-										type="submit"
-										className={clsx(
-											active && "bg-neutral-100",
-											"block px-4 py-2 text-start text-sm font-medium text-neutral-500 hover:text-neutral-700",
-										)}
-									>
-										Log Out
-									</button>
-								</form>
+								<button
+									type="button"
+									onClick={handleLogout}
+									disabled={loggingOut}
+									className={clsx(
+										active && "bg-neutral-100",
+										"block w-full px-4 py-2 text-start text-sm font-medium text-neutral-500 hover:text-neutral-700 disabled:opacity-50",
+									)}
+								>
+									{loggingOut ? "Logging out..." : "Log Out"}
+								</button>
 							)}
 						</Menu.Item>
 					</div>

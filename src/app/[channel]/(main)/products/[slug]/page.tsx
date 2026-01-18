@@ -8,7 +8,6 @@ import { VariantSelector } from "@/ui/components/VariantSelector";
 import { ProductImageWrapper } from "@/ui/atoms/ProductImageWrapper";
 import { executeGraphQL } from "@/lib/graphql";
 import { formatMoney, formatMoneyRange } from "@/lib/utils";
-import { addToCartAction } from "./actions";
 import { ProductDetailsDocument } from "@/gql/graphql";
 import { AvailabilityMessage } from "@/ui/components/AvailabilityMessage";
 
@@ -59,13 +58,13 @@ export async function generateMetadata(
 		},
 		openGraph: product.thumbnail
 			? {
-				images: [
-					{
-						url: product.thumbnail.url,
-						alt: product.name,
-					},
-				],
-			}
+					images: [
+						{
+							url: product.thumbnail.url,
+							alt: product.name,
+						},
+					],
+				}
 			: null,
 	};
 }
@@ -111,9 +110,9 @@ export default async function Page(props: {
 		? formatMoney(selectedVariant.pricing.price.gross.amount, selectedVariant.pricing.price.gross.currency)
 		: isAvailable
 			? formatMoneyRange({
-				start: product?.pricing?.priceRange?.start?.gross,
-				stop: product?.pricing?.priceRange?.stop?.gross,
-			})
+					start: product?.pricing?.priceRange?.start?.gross,
+					stop: product?.pricing?.priceRange?.stop?.gross,
+				})
 			: "";
 
 	const productJsonLd: WithContext<Product> = {
@@ -122,30 +121,30 @@ export default async function Page(props: {
 		image: product.thumbnail?.url,
 		...(selectedVariant
 			? {
-				name: `${product.name} - ${selectedVariant.name}`,
-				description: product.seoDescription || `${product.name} - ${selectedVariant.name}`,
-				offers: {
-					"@type": "Offer",
-					availability: selectedVariant.quantityAvailable
-						? "https://schema.org/InStock"
-						: "https://schema.org/OutOfStock",
-					priceCurrency: selectedVariant.pricing?.price?.gross.currency,
-					price: selectedVariant.pricing?.price?.gross.amount,
-				},
-			}
+					name: `${product.name} - ${selectedVariant.name}`,
+					description: product.seoDescription || `${product.name} - ${selectedVariant.name}`,
+					offers: {
+						"@type": "Offer",
+						availability: selectedVariant.quantityAvailable
+							? "https://schema.org/InStock"
+							: "https://schema.org/OutOfStock",
+						priceCurrency: selectedVariant.pricing?.price?.gross.currency,
+						price: selectedVariant.pricing?.price?.gross.amount,
+					},
+				}
 			: {
-				name: product.name,
-				description: product.seoDescription || product.name,
-				offers: {
-					"@type": "AggregateOffer",
-					availability: product.variants?.some((variant) => variant.quantityAvailable)
-						? "https://schema.org/InStock"
-						: "https://schema.org/OutOfStock",
-					priceCurrency: product.pricing?.priceRange?.start?.gross.currency,
-					lowPrice: product.pricing?.priceRange?.start?.gross.amount,
-					highPrice: product.pricing?.priceRange?.stop?.gross.amount,
-				},
-			}),
+					name: product.name,
+					description: product.seoDescription || product.name,
+					offers: {
+						"@type": "AggregateOffer",
+						availability: product.variants?.some((variant) => variant.quantityAvailable)
+							? "https://schema.org/InStock"
+							: "https://schema.org/OutOfStock",
+						priceCurrency: product.pricing?.priceRange?.start?.gross.currency,
+						lowPrice: product.pricing?.priceRange?.start?.gross.amount,
+						highPrice: product.pricing?.priceRange?.stop?.gross.amount,
+					},
+				}),
 	};
 
 	return (
@@ -156,9 +155,7 @@ export default async function Page(props: {
 					__html: JSON.stringify(productJsonLd),
 				}}
 			/>
-			<form className="grid gap-2 sm:grid-cols-2 lg:grid-cols-8" action={addToCartAction}>
-				<input type="hidden" name="channel" value={params.channel} />
-				<input type="hidden" name="variantId" value={selectedVariantID || ""} />
+			<div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-8">
 				<div className="md:col-span-1 lg:col-span-5">
 					{firstImage && (
 						<ProductImageWrapper
@@ -172,7 +169,9 @@ export default async function Page(props: {
 				</div>
 				<div className="flex flex-col pt-6 sm:col-span-1 sm:px-6 sm:pt-0 lg:col-span-3 lg:pt-16">
 					<div>
-						<h1 className="mb-4 flex-auto text-3xl font-medium tracking-tight text-neutral-900">{product?.name}</h1>
+						<h1 className="mb-4 flex-auto text-3xl font-medium tracking-tight text-neutral-900">
+							{product?.name}
+						</h1>
 						<p className="mb-8 text-sm " data-testid="ProductElement_Price">
 							{price}
 						</p>
@@ -187,7 +186,11 @@ export default async function Page(props: {
 						)}
 						<AvailabilityMessage isAvailable={isAvailable} />
 						<div className="mt-8">
-							<AddButton disabled={!selectedVariantID || !selectedVariant?.quantityAvailable} />
+							<AddButton
+								disabled={!selectedVariantID || !selectedVariant?.quantityAvailable}
+								channel={params.channel}
+								variantId={selectedVariantID || ""}
+							/>
 						</div>
 						{description && (
 							<div className="mt-8 space-y-6 text-sm text-neutral-500">
@@ -198,7 +201,7 @@ export default async function Page(props: {
 						)}
 					</div>
 				</div>
-			</form>
+			</div>
 		</section>
 	);
 }
