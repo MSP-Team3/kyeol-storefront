@@ -1,2 +1,2 @@
-export const dummyGatewayId = "saleor.io.dummy-payment-app";
+export const dummyGatewayId = "mirumee.payments.dummy";
 export type DummyGatewayId = typeof dummyGatewayId;

@@ -38,10 +38,7 @@ export const usePaymentGatewaysInitialize = () => {
 				onSuccess: ({ data }) => {
 					const parsedConfigs = (data.gatewayConfigs || []) as ParsedPaymentGateways;
 
-					if (!parsedConfigs.length) {
-						throw new Error("No available payment gateways");
-					}
-
+					// 빈 배열이어도 정상 처리 - 크래시 방지
 					setGatewayConfigs(parsedConfigs);
 				},
 				onError: () => {
