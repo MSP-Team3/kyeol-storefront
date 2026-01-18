@@ -27,11 +27,11 @@
 		"paths": {
 			"@/*": ["./src/*"],
 			"@ui/*": ["./src/components/*"]
-		},
-		"types": ["react-dom/canary"]
+		}
 	},
 	"include": [
 		"next-env.d.ts",
+		"src/types/**/*.d.ts",
 		"src/**/*.ts",
 		"src/**/*.tsx",
 		".next/types/**/*.ts",
