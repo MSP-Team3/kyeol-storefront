@@ -1,3 +1,4 @@
+// src/lib/graphql.ts
 import { invariant } from "ts-invariant";
 import { type TypedDocumentString } from "../gql/graphql";
 
@@ -19,9 +20,10 @@ export async function executeGraphQL<Result, Variables>(
 	} & (Variables extends Record<string, never> ? { variables?: never } : { variables: Variables }),
 ): Promise<Result> {
 	invariant(process.env.NEXT_PUBLIC_SALEOR_API_URL, "Missing NEXT_PUBLIC_SALEOR_API_URL env variable");
-	const { variables, headers, cache, revalidate, withAuth = true } = options;
 
-	const input = {
+	const { variables, headers, cache, revalidate, withAuth = false } = options;
+
+	const input: RequestInit & { next?: { revalidate?: number } } = {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
@@ -31,15 +33,26 @@ export async function executeGraphQL<Result, Variables>(
 			query: operation.toString(),
 			...(variables && { variables }),
 		}),
-		cache: cache,
+		cache,
 		next: { revalidate },
 	};
 
 	let response: Response;
+
 	if (withAuth) {
-		// Dynamic import to prevent cookies() call during static generation
-		const { getServerAuthClient } = await import("@/app/config");
-		response = await (await getServerAuthClient()).fetchWithAuth(process.env.NEXT_PUBLIC_SALEOR_API_URL, input);
+		try {
+			// Dynamic import: cookies() 관련 호출이 빌드/정적 렌더에서 실행되는 것을 방지
+			const { getServerAuthClient } = await import("@/app/config");
+			const authClient = await getServerAuthClient();
+			response = await authClient.fetchWithAuth(process.env.NEXT_PUBLIC_SALEOR_API_URL, input);
+		} catch (e) {
+			console.error("[executeGraphQL] withAuth path failed:", {
+				error: e,
+				operation: operation.toString(),
+				variables,
+			});
+			throw e;
+		}
 	} else {
 		response = await fetch(process.env.NEXT_PUBLIC_SALEOR_API_URL, input);
 	}
@@ -52,13 +65,26 @@ export async function executeGraphQL<Result, Variables>(
 				return "";
 			}
 		})();
-		console.error(input.body);
+
+		console.error("[executeGraphQL] HTTP error", {
+			status: response.status,
+			statusText: response.statusText,
+			operation: operation.toString(),
+			variables,
+			bodyPreview: body?.slice?.(0, 800),
+		});
+
 		throw new HTTPError(response, body);
 	}
 
 	const body = (await response.json()) as GraphQLRespone<Result>;
 
 	if ("errors" in body) {
+		console.error("[executeGraphQL] GraphQL errors", {
+			operation: operation.toString(),
+			variables,
+			errors: body.errors,
+		});
 		throw new GraphQLError(body);
 	}
 
@@ -73,6 +99,7 @@ class GraphQLError extends Error {
 		Object.setPrototypeOf(this, new.target.prototype);
 	}
 }
+
 class HTTPError extends Error {
 	constructor(response: Response, body: string) {
 		const message = `HTTP error ${response.status}: ${response.statusText}\n${body}`;

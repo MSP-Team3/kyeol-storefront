@@ -7,8 +7,7 @@ import { executeGraphQL } from "@/lib/graphql";
 export async function getIdFromCookies(channel: string) {
 	try {
 		const cookieName = `checkoutId-${channel}`;
-		const checkoutId = cookies().get(cookieName)?.value || "";
-		return checkoutId;
+		return cookies().get(cookieName)?.value || "";
 	} catch (e) {
 		console.error("getIdFromCookies failed:", e);
 		return "";
@@ -29,34 +28,33 @@ export async function saveIdToCookie(channel: string, checkoutId: string) {
 		});
 	} catch (e) {
 		console.error("saveIdToCookie failed:", e);
-		// 쿠키 설정 실패해도 치명 장애로 올리지 않음
 	}
 }
 
 export async function find(checkoutId: string) {
 	try {
-		const { checkout } = checkoutId
-			? await executeGraphQL(CheckoutFindDocument, {
-				variables: { id: checkoutId },
-				cache: "no-cache",
-				withAuth: false,
-			})
-			: { checkout: null };
+		if (!checkoutId) return null;
 
-		return checkout;
-	} catch {
-		// invalid ID or checkout not found
+		const { checkout } = await executeGraphQL(CheckoutFindDocument, {
+			variables: { id: checkoutId },
+			cache: "no-cache",
+			withAuth: false,
+		});
+
+		return checkout ?? null;
+	} catch (e) {
+		console.error("checkout.find failed:", e);
+		return null;
 	}
 }
 
 export async function findOrCreate({ channel, checkoutId }: { checkoutId?: string; channel: string }) {
 	if (!checkoutId) {
-		return (await create({ channel })).checkoutCreate?.checkout;
+		return (await create({ channel })).checkoutCreate?.checkout ?? null;
 	}
 	const checkout = await find(checkoutId);
-	return checkout || (await create({ channel })).checkoutCreate?.checkout;
+	return checkout || (await create({ channel })).checkoutCreate?.checkout || null;
 }
 
 export const create = ({ channel }: { channel: string }) =>
 	executeGraphQL(CheckoutCreateDocument, { cache: "no-cache", variables: { channel }, withAuth: false });
-
