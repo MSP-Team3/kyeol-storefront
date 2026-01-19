@@ -4,11 +4,23 @@ const config = {
 		remotePatterns: [
 			{
 				protocol: "https",
-				hostname: "**",
+				hostname: "kyeol.click",
 			},
 			{
-				protocol: "http",
-				hostname: "**",
+				protocol: "https",
+				hostname: "www.kyeol.click",
+			},
+			{
+				protocol: "https",
+				hostname: "dev.kyeol.click",
+			},
+			{
+				protocol: "https",
+				hostname: "stage.kyeol.click",
+			},
+			{
+				protocol: "https",
+				hostname: "*.kyeol.click",
 			},
 		],
 	},
