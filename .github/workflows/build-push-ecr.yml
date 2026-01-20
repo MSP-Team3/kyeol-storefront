@@ -33,7 +33,6 @@ jobs:
             storefront_url: https://origin-prod.kyeol.click
             api_url: https://api.kyeol.click/graphql/
 
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -74,7 +73,6 @@ jobs:
 
       # Update GitOps repo to trigger ArgoCD deployment
       - name: Update GitOps Repository
-        if: matrix.env == 'prod'
         env:
           GITOPS_REPO: MSP-Team3/kyeol-app-gitops
           IMAGE_TAG: ${{ matrix.env }}-${{ github.sha }}
@@ -83,20 +81,20 @@ jobs:
           git clone https://x-access-token:${{ secrets.GITOPS_TOKEN }}@github.com/${{ env.GITOPS_REPO }}.git gitops
           cd gitops
 
-          # Update storefront image tag in kustomization.yaml (only the line after kyeol-prod-storefront)
+          # Update storefront image tag in kustomization.yaml for the current environment
           # Using awk to precisely target the storefront image entry
-          awk '/kyeol-prod-storefront/{found=1} found && /newTag:/{sub(/newTag: .*/, "newTag: '"${IMAGE_TAG}"'"); found=0} 1' \
-            apps/saleor/overlays/prod/kustomization.yaml > tmp && mv tmp apps/saleor/overlays/prod/kustomization.yaml
+          awk '/kyeol-${{ matrix.env }}-storefront/{found=1} found && /newTag:/{sub(/newTag: .*/, "newTag: '"${IMAGE_TAG}"'"); found=0} 1' \
+            apps/saleor/overlays/${{ matrix.env }}/kustomization.yaml > tmp && mv tmp apps/saleor/overlays/${{ matrix.env }}/kustomization.yaml
 
           # Verify the change
           echo "Updated kustomization.yaml:"
-          grep -A1 "kyeol-prod-storefront" apps/saleor/overlays/prod/kustomization.yaml
+          grep -A1 "kyeol-${{ matrix.env }}-storefront" apps/saleor/overlays/${{ matrix.env }}/kustomization.yaml
 
           # Commit and push
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add apps/saleor/overlays/prod/kustomization.yaml
-          git diff --cached --exit-code || git commit -m "chore(storefront): Update image tag to ${IMAGE_TAG}
+          git add apps/saleor/overlays/${{ matrix.env }}/kustomization.yaml
+          git diff --cached --exit-code || git commit -m "chore(storefront): Update ${{ matrix.env }} image tag to ${IMAGE_TAG}
 
           Triggered by: ${{ github.event.head_commit.message }}
           Commit: ${{ github.sha }}"
